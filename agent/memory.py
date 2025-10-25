@@ -3,7 +3,7 @@
 
 import aiosqlite
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Optional, Dict, List, Any
 
@@ -64,11 +64,29 @@ class MemoryManager:
                 )
             """)
 
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS custom_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    category TEXT NOT NULL,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    session_id TEXT,
+                    UNIQUE(category, key),
+                    FOREIGN KEY (session_id) REFERENCES sessions(id)
+                )
+            """)
+
+            await db.execute("""
+                CREATE INDEX IF NOT EXISTS idx_memory_category ON custom_memory(category)
+            """)
+
             await db.commit()
 
     async def create_session(self, session_id: str) -> str:
         """Create new session"""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "INSERT INTO sessions (id, started_at, last_active_at) VALUES (?, ?, ?)",
@@ -88,7 +106,7 @@ class MemoryManager:
 
     async def update_session(self, session_id: str, cost_usd: float = 0.0, message_count: int = 0):
         """Update session stats"""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """UPDATE sessions
@@ -109,7 +127,7 @@ class MemoryManager:
             content: Message content (text or JSON for tool messages)
             message_type: Message type (text, tool_use, tool_result)
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "INSERT INTO messages (session_id, timestamp, role, content) VALUES (?, ?, ?, ?)",
@@ -138,7 +156,7 @@ class MemoryManager:
     async def save_research(self, query: str, sources: List[str],
                            analysis: str, session_id: Optional[str] = None) -> int:
         """Save research results"""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         sources_json = json.dumps(sources)
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
@@ -154,7 +172,7 @@ class MemoryManager:
                            description: Optional[str] = None,
                            session_id: Optional[str] = None) -> int:
         """Save document metadata"""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """INSERT INTO documents (filename, file_type, file_path, description, created_at, session_id)
@@ -230,3 +248,96 @@ class MemoryManager:
                 "total_cost_usd": row[2],
                 "message_count": row[3]
             }
+
+    async def save_memory(self, category: str, key: str, value: str,
+                         session_id: Optional[str] = None) -> None:
+        """Save or update custom memory fact
+
+        Args:
+            category: Memory category (business, preferences, personal, etc.)
+            key: Memory key (business_type, email_format, etc.)
+            value: Memory value
+            session_id: Optional session where this was learned
+        """
+        now = datetime.now(UTC).isoformat()
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                """INSERT INTO custom_memory (category, key, value, created_at, updated_at, session_id)
+                   VALUES (?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(category, key) DO UPDATE SET
+                       value = excluded.value,
+                       updated_at = excluded.updated_at,
+                       session_id = excluded.session_id""",
+                (category, key, value, now, now, session_id)
+            )
+            await db.commit()
+
+    async def get_memories(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retrieve custom memories
+
+        Args:
+            category: Optional category filter
+
+        Returns:
+            List of memory entries
+        """
+        async with aiosqlite.connect(self.db_path) as db:
+            if category:
+                cursor = await db.execute(
+                    """SELECT category, key, value, created_at, updated_at
+                       FROM custom_memory
+                       WHERE category = ?
+                       ORDER BY updated_at DESC""",
+                    (category,)
+                )
+            else:
+                cursor = await db.execute(
+                    """SELECT category, key, value, created_at, updated_at
+                       FROM custom_memory
+                       ORDER BY category, updated_at DESC"""
+                )
+
+            rows = await cursor.fetchall()
+            return [
+                {
+                    "category": r[0],
+                    "key": r[1],
+                    "value": r[2],
+                    "created_at": r[3],
+                    "updated_at": r[4]
+                }
+                for r in rows
+            ]
+
+    async def delete_memory(self, category: str, key: str) -> bool:
+        """Delete specific memory entry
+
+        Returns:
+            True if deleted, False if not found
+        """
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                "DELETE FROM custom_memory WHERE category = ? AND key = ?",
+                (category, key)
+            )
+            await db.commit()
+            return cursor.rowcount > 0
+
+    async def get_all_memories_formatted(self) -> str:
+        """Get all memories formatted for system prompt"""
+        memories = await self.get_memories()
+        if not memories:
+            return ""
+
+        by_category = {}
+        for mem in memories:
+            cat = mem['category']
+            if cat not in by_category:
+                by_category[cat] = []
+            by_category[cat].append(f"- {mem['key']}: {mem['value']}")
+
+        sections = []
+        for cat, items in by_category.items():
+            sections.append(f"{cat.upper()}:\n" + "\n".join(items))
+
+        return "\n\n".join(sections)

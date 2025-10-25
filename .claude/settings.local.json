@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m pytest:*)"
+      "Bash(python -m pytest:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue view:*)",
+      "Bash(pip install:*)",
+      "Bash(pytest:*)",
+      "Bash(timeout 5 python:*)",
+      "Bash(gh issue list:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

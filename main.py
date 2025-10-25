@@ -32,6 +32,33 @@ def print_banner():
     print()
 
 
+def _is_skill_message(text: str) -> bool:
+    """Check if text is a skill-related system message"""
+    if not isinstance(text, str):
+        return False
+
+    # Filter out skill loading messages
+    skill_indicators = [
+        "skill is running",
+        "skill is loading",
+        "ABOUTME:",
+        "# ",  # Markdown headers from skill prompts
+    ]
+
+    text_lower = text.lower().strip()
+
+    # Check for skill indicators
+    for indicator in skill_indicators:
+        if indicator.lower() in text_lower:
+            return True
+
+    # Check if it's a multi-line skill prompt (starts with markdown/headers)
+    if text.strip().startswith("#") and len(text) > 100:
+        return True
+
+    return False
+
+
 def print_help():
     """Display command help"""
     print(f"\n{Colors.SYSTEM}Commands:")
@@ -53,22 +80,33 @@ async def display_stream(client: AssistantClient, prompt: str):
             # Handle different message types
             if hasattr(message, 'type'):
                 if message.type == 'text':
-                    print(message.content, end='', flush=True)
+                    # Filter out skill loading messages
+                    content = message.content
+                    if not _is_skill_message(content):
+                        print(content, end='', flush=True)
                 elif message.type == 'tool_use':
                     tool_name = getattr(message, 'name', 'unknown')
-                    print(f"\n{Colors.SYSTEM}[TOOL] Using: {tool_name}{Colors.ASSISTANT}", flush=True)
+                    # Only show non-skill tool usage
+                    if tool_name != 'Skill':
+                        print(f"\n{Colors.SYSTEM}[TOOL] Using: {tool_name}{Colors.ASSISTANT}", flush=True)
                 elif message.type == 'tool_result':
                     # Tool results are handled internally
                     pass
             elif hasattr(message, 'content'):
                 if isinstance(message.content, str):
-                    print(message.content, end='', flush=True)
+                    content = message.content
+                    if not _is_skill_message(content):
+                        print(content, end='', flush=True)
                 elif isinstance(message.content, list):
                     for block in message.content:
                         if hasattr(block, 'text'):
-                            print(block.text, end='', flush=True)
+                            text = block.text
+                            if not _is_skill_message(text):
+                                print(text, end='', flush=True)
                         elif hasattr(block, 'type') and block.type == 'text':
-                            print(block.get('text', ''), end='', flush=True)
+                            text = block.get('text', '')
+                            if not _is_skill_message(text):
+                                print(text, end='', flush=True)
 
         print(f"{Colors.RESET}")  # Reset color and newline
 

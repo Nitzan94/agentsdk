@@ -1,6 +1,6 @@
 ---
 name: financial-modeling
-description: This skill enables comprehensive financial modeling including DCF valuation, financial statement forecasting, scenario analysis, and ad hoc financial calculations. Use this skill when building new financial models from scratch, enhancing existing financial models, performing valuation analysis, creating sensitivity analyses, or performing specialized financial calculations like IRR, NPV, breakeven analysis, and unit economics modeling.
+description: financial modeling including DCF valuation, financial statement forecasting, scenario analysis, and ad hoc financial calculations. Use this skill when building new financial models from scratch, enhancing existing financial models, performing valuation analysis, creating sensitivity analyses, or performing specialized financial calculations like IRR, NPV, breakeven analysis, and unit economics modeling.
 ---
 
 # Financial Modeling

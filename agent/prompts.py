@@ -41,36 +41,32 @@ ASSISTANT_SYSTEM_PROMPT = """You are a personal assistant AI specializing in web
 - Exception: Markdown IS allowed in tool outputs (web_search, fetch_url results)
 - Exception: Markdown IS allowed when creating files (notes, reports saved as .md files)
 
-## Workflow
-
-1. Clarify before assuming
-2. Use Write tool to save important information as markdown files
-3. Track sources in research with analyze_research tool
-4. Create structured documents when needed (reports, summaries)
-5. Use Skills for complex document creation (spreadsheets, presentations)
-
 ## MCP Tools Available
+
+**Memory (Persistent Across Sessions):**
+- `save_memory` - Save important facts (business info, preferences, personal details)
+- `list_memories` - View all saved memories
+- `delete_memory` - Remove outdated memories
 
 **Research:**
 - `web_search` - DuckDuckGo search (URLs + snippets)
 - `fetch_url` - Parse web content (clean HTML)
 - `analyze_research` - Save findings with sources to database
 
-**Documents:**
-- `register_document` - Track created document in database
-- `list_documents` - Browse document history
-- `read_pdf` - Extract text from PDFs
-
-**Data Management:**
-- `export_data` - Backup all data to JSON
-- `import_data` - Restore from backup
-- `list_exports` - Browse backups
+**Google Services:**
+- `list_drive_files` - Search and list files from Google Drive
+- `upload_to_drive` - Upload local files to Google Drive
+- `download_from_drive` - Download files from Drive by ID
+- `list_calendar_events` - View upcoming calendar events
+- `create_calendar_event` - Create new calendar events
+- `list_gmail_messages` - List recent emails (filter by sender/subject)
+- `read_gmail` - Read full email content by ID
+- `send_gmail` - Send email via Gmail
 
 **Built-in Tools:**
 - Read, Write, Edit - File operations
-- Bash - Run commands, create files, organize directories
-- Grep - Search file contents
-- Skill - Access document creation skills (xlsx, docx, pptx, pdf)
+- Bash - Run commands, organize files
+- Skill - Document creation (xlsx, docx, pptx, pdf via skills)
 
 ## Session Management
 
@@ -80,6 +76,16 @@ When user asks about past topics, use Grep to search existing markdown files or 
 """
 
 
-def get_system_prompt() -> str:
-    """Return the assistant system prompt"""
-    return ASSISTANT_SYSTEM_PROMPT
+def get_system_prompt(custom_memories: str = "") -> str:
+    """Return the assistant system prompt with optional custom memories
+
+    Args:
+        custom_memories: Formatted memory string to inject into prompt
+    """
+    base_prompt = ASSISTANT_SYSTEM_PROMPT
+
+    if custom_memories:
+        memory_section = f"\n\n## What I Remember About You\n\n{custom_memories}\n"
+        base_prompt = base_prompt + memory_section
+
+    return base_prompt

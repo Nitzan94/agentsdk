@@ -1,6 +1,0 @@
-Lead ID,Company Name,Contact Name,Email,Phone,Lead Source,Status,Priority,Value,Next Action,Date Created,Last Contact,Notes
-1,Acme Corp,John Smith,john.smith@acme.com,555-0101,Website,New,High,$50000,Initial call,2025-10-23,2025-10-23,Interested in enterprise plan
-2,TechStart Inc,Sarah Johnson,sarah@techstart.com,555-0102,Referral,Qualified,Medium,$25000,Send proposal,2025-10-22,2025-10-23,Requested pricing information
-3,Global Solutions,Mike Chen,mchen@globalsol.com,555-0103,LinkedIn,Contacted,High,$75000,Follow-up call,2025-10-21,2025-10-22,Decision maker identified
-4,SmartBiz LLC,Emily Davis,emily@smartbiz.com,555-0104,Trade Show,Nurturing,Low,$10000,Send newsletter,2025-10-20,2025-10-20,Long sales cycle expected
-5,Innovation Labs,David Park,dpark@innovlabs.com,555-0105,Cold Call,New,Medium,$35000,Schedule demo,2025-10-23,2025-10-23,Needs technical demo

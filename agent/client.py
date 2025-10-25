@@ -8,14 +8,15 @@ import json
 from .memory import MemoryManager
 from .prompts import get_system_prompt
 from tools.research import ResearchTools
-from tools.documents import DocumentTools
-from tools.export import ExportTools
+from tools.memory import MemoryTools
+from tools.google_services import GoogleTools
 
 
 class AssistantClient:
     def __init__(self, session_id: Optional[str] = None, resume: bool = False):
         self.memory = MemoryManager()
-        self.session_id = session_id
+        self.session_id = session_id  # Our custom session ID for DB tracking
+        self.claude_session_id: Optional[str] = None  # Claude SDK's session ID for transcripts
         self.resume = resume
         self.client: Optional[ClaudeSDKClient] = None
         self.research_tools = None
@@ -68,16 +69,19 @@ class AssistantClient:
     async def setup_client(self) -> ClaudeSDKClient:
         """Configure and create SDK client with tools"""
 
+        # Load custom memories for system prompt
+        custom_memories = await self.memory.get_all_memories_formatted()
+
         # Initialize tool instances
         self.research_tools = ResearchTools(self.memory, self.session_id)
-        document_tools = DocumentTools(self.memory, self.session_id)
-        export_tools = ExportTools(self.memory)
+        memory_tools = MemoryTools(self.memory, self.session_id)
+        google_tools = GoogleTools()
 
         # Collect all tools
         all_tools = []
         all_tools.extend(self.research_tools.get_tools())
-        all_tools.extend(document_tools.get_tools())
-        all_tools.extend(export_tools.get_tools())
+        all_tools.extend(memory_tools.get_tools())
+        all_tools.extend(google_tools.get_tools())
 
         # Create MCP server with tools
         mcp_server = create_sdk_mcp_server(
@@ -89,24 +93,29 @@ class AssistantClient:
         options = ClaudeAgentOptions(
             system_prompt={
                 "type": "custom",
-                "custom": get_system_prompt()
+                "custom": get_system_prompt(custom_memories)
             },
             mcp_servers={"assistant": mcp_server},
             allowed_tools=[
                 # Skills system
                 "Skill",  # Enable Agent Skills
+                # Memory
+                "mcp__assistant__save_memory",
+                "mcp__assistant__list_memories",
+                "mcp__assistant__delete_memory",
                 # Research
                 "mcp__assistant__web_search",
                 "mcp__assistant__fetch_url",
                 "mcp__assistant__analyze_research",
-                # Document tracking
-                "mcp__assistant__register_document",
-                "mcp__assistant__list_documents",
-                "mcp__assistant__read_pdf",
-                # Export/Import
-                "mcp__assistant__export_data",
-                "mcp__assistant__import_data",
-                "mcp__assistant__list_exports",
+                # Google Services
+                "mcp__assistant__list_drive_files",
+                "mcp__assistant__upload_to_drive",
+                "mcp__assistant__download_from_drive",
+                "mcp__assistant__list_calendar_events",
+                "mcp__assistant__create_calendar_event",
+                "mcp__assistant__list_gmail_messages",
+                "mcp__assistant__read_gmail",
+                "mcp__assistant__send_gmail",
                 # Built-in tools
                 "Bash",
                 "Read",
@@ -116,8 +125,8 @@ class AssistantClient:
             ],
             setting_sources=["user", "project"],  # Load skills from filesystem
             can_use_tool=self._permission_handler,  # Custom permission handler with terminal prompts
-            cwd=".",
-            resume=self.session_id if (self.resume and self.session_id) else None
+            cwd="."
+            # Note: ClaudeSDKClient maintains conversation context automatically within same instance
         )
 
         return ClaudeSDKClient(options=options)
@@ -127,6 +136,7 @@ class AssistantClient:
         try:
             if not self.client:
                 self.client = await self.setup_client()
+                # Connect on first use only
                 await self.client.connect()
 
             # Save user message
@@ -146,6 +156,10 @@ class AssistantClient:
 
             async for message in self.client.receive_response():
                 yield message
+
+                # Capture Claude's session ID on first message
+                if hasattr(message, 'session_id') and not self.claude_session_id:
+                    self.claude_session_id = message.session_id
 
                 # Save tool_use messages
                 if hasattr(message, 'type') and message.type == 'tool_use':

@@ -14,10 +14,15 @@ except ImportError:
     BS4_AVAILABLE = False
 
 try:
-    from duckduckgo_search import DDGS
+    from ddgs import DDGS
     DDGS_AVAILABLE = True
 except ImportError:
-    DDGS_AVAILABLE = False
+    try:
+        # Fallback to old package name
+        from duckduckgo_search import DDGS
+        DDGS_AVAILABLE = True
+    except ImportError:
+        DDGS_AVAILABLE = False
 
 
 class ResearchTools:

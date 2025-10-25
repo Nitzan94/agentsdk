@@ -13,9 +13,8 @@ async def test_setup():
         from agent.memory import MemoryManager
         from agent.prompts import get_system_prompt
         from agent.client import AssistantClient
-        from tools.notes import NoteTools
         from tools.research import ResearchTools
-        from tools.reports import ReportTools
+        from tools.memory import MemoryTools
         print("[OK] All imports successful")
     except ImportError as e:
         print(f"[ERROR] Import failed: {e}")
@@ -36,18 +35,10 @@ async def test_setup():
         await memory.save_message(session_id, "user", "Test message")
         print("[OK] Message saved")
 
-        # Test note creation
-        note_id = await memory.save_note(
-            title="Test Note",
-            content="Test content",
-            tags=["test"],
-            file_path="test.md"
-        )
-        print(f"[OK] Note saved: ID {note_id}")
-
-        # Test note search
-        notes = await memory.search_notes(query="Test")
-        print(f"[OK] Note search: found {len(notes)} note(s)")
+        # Test custom memory
+        await memory.save_memory("test", "key", "value", session_id)
+        memories = await memory.get_memories()
+        print(f"[OK] Custom memory: {len(memories)} entry(ies)")
 
         print("[OK] Memory manager working")
 
@@ -57,17 +48,13 @@ async def test_setup():
 
     print("\n[INFO] Testing tool initialization...")
     try:
-        note_tools = NoteTools(memory)
-        tools = note_tools.get_tools()
-        print(f"[OK] Note tools: {len(tools)} tools")
-
-        research_tools = ResearchTools(memory)
+        research_tools = ResearchTools(memory, session_id)
         tools = research_tools.get_tools()
         print(f"[OK] Research tools: {len(tools)} tools")
 
-        report_tools = ReportTools(memory)
-        tools = report_tools.get_tools()
-        print(f"[OK] Report tools: {len(tools)} tools")
+        memory_tools = MemoryTools(memory, session_id)
+        tools = memory_tools.get_tools()
+        print(f"[OK] Memory tools: {len(tools)} tools")
 
         await research_tools.close()
 
