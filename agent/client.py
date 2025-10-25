@@ -103,6 +103,9 @@ class AssistantClient:
                 "mcp__assistant__save_memory",
                 "mcp__assistant__list_memories",
                 "mcp__assistant__delete_memory",
+                "mcp__assistant__list_sessions",
+                "mcp__assistant__view_session",
+                "mcp__assistant__search_history",
                 # Research
                 "mcp__assistant__web_search",
                 "mcp__assistant__fetch_url",

@@ -152,6 +152,52 @@ class MemoryManager:
                 for r in reversed(rows)
             ]
 
+    async def list_all_sessions(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """List all sessions with metadata"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """SELECT id, started_at, last_active_at, message_count, total_cost_usd
+                   FROM sessions
+                   ORDER BY last_active_at DESC
+                   LIMIT ?""",
+                (limit,)
+            )
+            rows = await cursor.fetchall()
+            return [
+                {
+                    "session_id": r[0],
+                    "started_at": r[1],
+                    "last_active_at": r[2],
+                    "message_count": r[3],
+                    "total_cost_usd": r[4]
+                }
+                for r in rows
+            ]
+
+    async def search_all_messages(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Search messages across all sessions"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """SELECT m.session_id, m.timestamp, m.role, m.content, s.started_at
+                   FROM messages m
+                   JOIN sessions s ON m.session_id = s.id
+                   WHERE m.role IN ('user', 'assistant') AND m.content LIKE ?
+                   ORDER BY m.timestamp DESC
+                   LIMIT ?""",
+                (f'%{query}%', limit)
+            )
+            rows = await cursor.fetchall()
+            return [
+                {
+                    "session_id": r[0],
+                    "timestamp": r[1],
+                    "role": r[2],
+                    "content": r[3],
+                    "session_started": r[4]
+                }
+                for r in rows
+            ]
+
 
     async def save_research(self, query: str, sources: List[str],
                            analysis: str, session_id: Optional[str] = None) -> int:

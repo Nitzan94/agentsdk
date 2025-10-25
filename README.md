@@ -1,6 +1,6 @@
 # Personal Assistant Agent
 
-CLI agent for note-taking, web research, reports with persistent memory.
+CLI agent for web research, note-taking, and document creation with persistent memory across sessions.
 
 ## Setup
 
@@ -14,25 +14,51 @@ Set `ANTHROPIC_API_KEY` env var.
 
 ## Usage
 
+**Rich terminal UI** (recommended):
+```bash
+python main_rich.py
+```
+
+**Simple CLI**:
 ```bash
 python main.py
 ```
 
-Resume previous session:
+**Resume previous session**:
 ```bash
-python main.py --resume
+python main_rich.py --resume
 ```
+
+See [CLI_GUIDE.md](CLI_GUIDE.md) for full CLI documentation.
 
 ## Features
 
-- **Persistent memory** across sessions
-- **Note-taking** with tags and search
-- **Web search** with DuckDuckGo (real search results!)
-- **HTML parsing** with BeautifulSoup (clean content extraction)
-- **Web research** with source tracking
-- **Report generation** with citations
-- **Data export/import** for backups
-- **Suggestion tracking**
-- **Document creation** (Excel, Word, PowerPoint, PDF)
-- **Permission system** with terminal prompts for bash/python
-- **Cost tracking** per session
+### Memory & Sessions
+- **Custom memory** - Agent remembers facts about your business, preferences, personal details across ALL sessions
+- **Session history** - List, view, and search all past conversations
+- **Session context** - Agent maintains conversation within same session
+- **Cost tracking** - Track API costs per session
+
+### Research
+- **Web search** - DuckDuckGo integration (no API key needed)
+- **HTML parsing** - Clean content extraction from web pages
+- **Source tracking** - Research findings saved to database with citations
+
+### Google Services
+- **Google Drive** - List, upload, download files
+- **Google Calendar** - View and create events
+- **Gmail** - List, read, send emails
+
+See [GOOGLE_SETUP.md](GOOGLE_SETUP.md) for Google OAuth setup.
+
+### Document Creation
+- **Excel** - Spreadsheets via xlsx skill
+- **Word** - Documents via docx skill
+- **PowerPoint** - Presentations via pptx skill
+- **PDF** - PDF files via pdf skill
+- **Markdown conversion** - Convert files to markdown via markitdown-skill
+
+### File Management
+- **Read/Write/Edit** - File operations
+- **Bash** - Run commands with permission prompts
+- **Project organization** - Automatic file organization by project

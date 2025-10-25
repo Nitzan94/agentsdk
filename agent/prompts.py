@@ -47,6 +47,9 @@ ASSISTANT_SYSTEM_PROMPT = """You are a personal assistant AI specializing in web
 - `save_memory` - Save important facts (business info, preferences, personal details)
 - `list_memories` - View all saved memories
 - `delete_memory` - Remove outdated memories
+- `list_sessions` - List all past conversation sessions
+- `view_session` - View conversation history from specific session
+- `search_history` - Search across all past conversations
 
 **Research:**
 - `web_search` - DuckDuckGo search (URLs + snippets)

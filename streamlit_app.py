@@ -5,6 +5,12 @@ import streamlit as st
 import asyncio
 from agent.client import AssistantClient
 import nest_asyncio
+import os
+
+# Add claude CLI to PATH (needed for Claude Agent SDK)
+npm_bin = r"C:\Users\nitza\AppData\Roaming\npm"
+if npm_bin not in os.environ["PATH"]:
+    os.environ["PATH"] = npm_bin + os.pathsep + os.environ["PATH"]
 
 # Allow nested event loops (needed for Streamlit)
 nest_asyncio.apply()
