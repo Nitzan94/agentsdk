@@ -23,10 +23,16 @@ wheels/
 .installed.cfg
 *.egg
 
+# Secrets
+.env
+credentials.json
+storage/google_token.json
+
 # Storage
 storage/*.db
 storage/exports/*.json
 storage/documents/*
+storage/uploads/*
 !storage/.gitkeep
 !storage/exports/.gitkeep
 !storage/documents/.gitkeep
